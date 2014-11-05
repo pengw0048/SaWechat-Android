@@ -53,7 +53,7 @@ Public Class Form1
                         file1.Close()
                         file2.Close()
                         Dim IMEI As String = ""
-                        Dim uid As Integer = 0
+                        Dim uid As UInt32 = 0
                         For i = 0 To UBound(bytes1) - 15
                             Dim fail As Boolean = False
                             For j = 0 To 14
@@ -147,4 +147,31 @@ Public Class Form1
         End If
     End Function
 
+    Private Sub ComboBox1_SelectedIndexChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles ComboBox1.SelectedIndexChanged
+        If ComboBox1.SelectedIndex = 0 Then
+            Button2.Enabled = False
+        ElseIf ComboBox1.SelectedIndex > 0 Then
+            Dim idx As Integer = ComboBox1.SelectedIndex
+            If passwords(idx) = "" Then
+                MsgBox("程序无法自动计算数据库密码，请输入手机的IMEI号（在拨号界面输入*#06#），以及微信UID。" + vbCrLf + "请用Chrome或Firefox登录网页版微信，按F12，再按Ctrl+F，搜索uid。" + vbCrLf + "uid=后面的数字即为所求。" + vbCrLf + "如果失败，请尝试用手机的IMSI代替IMEI。")
+                Dim IMEI As String = InputBox("请输入15位IMEI或IMSI")
+                If IMEI Is Nothing Then GoTo fail
+                Dim uid As String = InputBox("请输入微信UID")
+                If uid Is Nothing Then GoTo fail
+                Dim pass As String = TryPassword(MD5(IMEI + uid, 7), rightpath + ComboBox1.Text + "\EnMicroMsg.db")
+                If pass <> "" Then
+                    passwords(idx) = pass
+                    Button2.Enabled = True
+                    Exit Sub
+                End If
+                MsgBox("密码错误，请尝试其他组合。")
+            Else
+                Button2.Enabled = True
+                Exit Sub
+            End If
+        End If
+fail:
+        Button2.Enabled = False
+        ComboBox1.SelectedIndex = 0
+    End Sub
 End Class
