@@ -42,7 +42,7 @@ Public Class Form1
                 Dim FilInfo As DirectoryInfo
                 For Each FilInfo In DirInfo.GetDirectories
                     Dim GotPass As Boolean = False
-                    If FilInfo.Name.Length = 32 AndAlso FilInfo.Name.Replace("0", "") <> "" AndAlso File.Exists(FilInfo.FullName + "EnMicroMsg.db") Then
+                    If FilInfo.Name.Length = 32 AndAlso FilInfo.Name.Replace("0", "") <> "" AndAlso File.Exists(FilInfo.FullName + "\EnMicroMsg.db") Then
                         directories.Add(FilInfo.Name)
                         Dim file1 As New FileStream(rightpath + "CompatibleInfo.cfg", FileMode.Open)
                         Dim file2 As New FileStream(rightpath + "systemInfo.cfg", FileMode.Open)
@@ -74,14 +74,17 @@ Public Class Form1
                                         End If
                                     Next
                                     If fail = False Then
-                                        uid = BitConverter.ToUInt32(bytes2, j + 6)
+                                        uid = Convert.ToUInt32(bytes2(j + 6)) * &H1000000UI + Convert.ToUInt32(bytes2(j + 7)) * &H10000UI + Convert.ToUInt32(bytes2(j + 8)) * &H100UI + Convert.ToUInt32(bytes2(j + 9)) * &H1UI
                                         Dim tPass As String = TryPassword(MD5(IMEI + Trim(uid), 7), FilInfo.FullName + "\EnMicroMsg.db")
-                                        passwords.Add(tPass)
-                                        If tPass <> "" Then GotPass = True
+                                        If tPass <> "" Then
+                                            passwords.Add(tPass)
+                                            GotPass = True
+                                        End If
                                     End If
                                 Next
                             End If
                         Next
+                        If GotPass = False Then passwords.Add("")
                         ComboBox1.Items.Add(IIf(GotPass, "(已解密)", "(未解密)") + FilInfo.Name)
                     End If
                 Next
@@ -119,7 +122,29 @@ Public Class Form1
     End Function
 
     Function TryPassword(ByVal pass As String, ByVal db As String) As String
-        Return ""
+        Dim proc As New Process
+        Dim pinfo As New ProcessStartInfo("sqlcipher.exe", """" + db + """")
+        pinfo.UseShellExecute = False
+        pinfo.RedirectStandardInput = True
+        pinfo.RedirectStandardError = True
+        pinfo.WindowStyle = ProcessWindowStyle.Hidden
+        pinfo.CreateNoWindow = True
+        proc.StartInfo = pinfo
+        proc.Start()
+        Dim sw As StreamWriter = proc.StandardInput
+        Dim sr As StreamReader = proc.StandardError
+        sw.WriteLine("PRAGMA key='" + pass + "';")
+        sw.WriteLine("PRAGMA cipher_use_hmac=off;")
+        sw.WriteLine(".schema")
+        sw.WriteLine(".quit")
+        sw.Flush()
+        Dim out As String = sr.ReadLine
+        proc.Close()
+        If out IsNot Nothing AndAlso out.StartsWith("Error") Then
+            Return ""
+        Else
+            Return pass
+        End If
     End Function
 
 End Class
