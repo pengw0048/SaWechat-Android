@@ -1,0 +1,1 @@
+Guys, I'm sorry this project was abandoned halfways. I don't really have an android phone at hand, and the ios version hasn't been updated for years. I'm not planning to update this project in the near future, but if you are interested, I'd be ready to answer your questions if I know, such as deciphering the db files.
